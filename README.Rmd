@@ -35,13 +35,31 @@ ncmeta::nc_dims("example4d.nc")
 
 ```
 
+```{bash, include=FALSE}
+#docker run  -v /perm_storage/home/mdsumner/Git/zarrquet:/zarrquet  --rm -ti  ghcr.io/mdsumner/gdal-builds:rocker-gdal-dev-python bash
+
+```
 
 Virtualize in Python
 
 ```python
 import virtualizarr
-ds = virtualizarr.open_virtual_mfdataset("example4d.nc")
-ds.attrs = {} ## bad encoding of attributes so we drop 
+ds = virtualizarr.open_virtual_mfdataset("example4d.nc", 
+   drop_variables = ["nv", "st_edges_ocean"], 
+   loadable_variables = ["xt_ocean", "yt_ocean", "st_ocean", "Time"]
+)
+ds.attrs["NumFilesInSet"] = int(ds.attrs["NumFilesInSet"]) ## bad encoding of attributes so we drop 
+
+
+## rename paths
+def local_to_url(old_local_path: str) -> str:
+    from pathlib import Path
+    new_url = "https://github.com/mdsumner/zarrquet/raw/refs/heads/main/"
+    filename = Path(old_local_path).name
+    return f'{new_url}/{filename}'
+
+ds = ds.virtualize.rename_paths(local_to_url)
+
 ds.virtualize.to_kerchunk("example4d.parquet", format = "parquet")
 ```
 
