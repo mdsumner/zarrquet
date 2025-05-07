@@ -18,7 +18,9 @@ knitr::opts_chunk$set(
 Example netcdf created with
 
 ```R
-gdalmdimtranslate -co FORMAT=NC4 -co ARRAY:COMPRESS=DEFLATE /vsicurl/https://thredds.nci.org.au/thredds/fileServer/gb6/BRAN/BRAN2020/daily/ocean_salt_1993_01.nc -scaleaxes "Time(4),st_ocean(4),yt_ocean(4),xt_ocean(4)" example4d.nc
+gdalmdimtranslate -co FORMAT=NC4 -co ARRAY:COMPRESS=DEFLATE \
+/vsicurl/https://thredds.nci.org.au/thredds/fileServer/gb6/BRAN/BRAN2020/daily/ocean_salt_1993_01.nc \
+-scaleaxes "Time(4),st_ocean(4),yt_ocean(4),xt_ocean(4)" example4d.nc
 ```
 
 ```{r}
@@ -56,13 +58,14 @@ Look at the virtual table (the default record size is 1e5 so I just isolate to t
 https://virtualizarr.readthedocs.io/en/latest/generated/virtualizarr.accessor.VirtualiZarrDatasetAccessor.rename_paths.html#virtualizarr.accessor.VirtualiZarrDatasetAccessor.rename_paths
 
 ```{r}
-d <- arrow::open_dataset("example4d.parquet") |> dplyr::collect()
+d <- arrow::open_dataset("example4d.parquet/salt/refs.0.parq") |> dplyr::collect()
 d[!is.na(d$path), ]
 
 ```
 
+I strongly think the array key indexes should be in that table as well but hey, there's a strong move to Icechunk instead of this (or kerchunk json). 
 
-I don't understand why there are 16 indexes but 20 paths and offsets atm ...  the full encoding and metadata is in
+The full encoding and metadata is in
 
 ```{r}
 ## we still get weird encoding from python->json so sub out inline NaN

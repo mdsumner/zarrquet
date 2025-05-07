@@ -6,7 +6,9 @@
 Example netcdf created with
 
 ``` r
-gdalmdimtranslate -co FORMAT=NC4 -co ARRAY:COMPRESS=DEFLATE /vsicurl/https://thredds.nci.org.au/thredds/fileServer/gb6/BRAN/BRAN2020/daily/ocean_salt_1993_01.nc -scaleaxes "Time(4),st_ocean(4),yt_ocean(4),xt_ocean(4)" example4d.nc
+gdalmdimtranslate -co FORMAT=NC4 -co ARRAY:COMPRESS=DEFLATE \
+/vsicurl/https://thredds.nci.org.au/thredds/fileServer/gb6/BRAN/BRAN2020/daily/ocean_salt_1993_01.nc \
+-scaleaxes "Time(4),st_ocean(4),yt_ocean(4),xt_ocean(4)" example4d.nc
 ```
 
 ``` r
@@ -50,35 +52,34 @@ input in-situ (can be remapped with the API at creation time).
 <https://virtualizarr.readthedocs.io/en/latest/generated/virtualizarr.accessor.VirtualiZarrDatasetAccessor.rename_paths.html#virtualizarr.accessor.VirtualiZarrDatasetAccessor.rename_paths>
 
 ``` r
-d <- arrow::open_dataset("example4d.parquet") |> dplyr::collect()
+d <- arrow::open_dataset("example4d.parquet/salt/refs.0.parq") |> dplyr::collect()
 d[!is.na(d$path), ]
-#> # A tibble: 20 × 4
+#> # A tibble: 16 × 4
 #>    path                 offset    size        raw
 #>    <chr>                 <int>   <int> <arrw_bnr>
-#>  1 /4dnc/example4d.nc    12260      34       NULL
-#>  2 /4dnc/example4d.nc    12294      17       NULL
-#>  3 /4dnc/example4d.nc    12311      26       NULL
-#>  4 /4dnc/example4d.nc    12337      26       NULL
-#>  5 /4dnc/example4d.nc    55531 1934051       NULL
-#>  6 /4dnc/example4d.nc  1989582 2107082       NULL
-#>  7 /4dnc/example4d.nc  7435080 1068653       NULL
-#>  8 /4dnc/example4d.nc  8503733 1793109       NULL
-#>  9 /4dnc/example4d.nc  4096664 1640701       NULL
-#> 10 /4dnc/example4d.nc  5737365 1697715       NULL
-#> 11 /4dnc/example4d.nc 10296842  765912       NULL
-#> 12 /4dnc/example4d.nc 11062754 1330360       NULL
-#> 13 /4dnc/example4d.nc 12393114 1458242       NULL
-#> 14 /4dnc/example4d.nc 13851356 1592023       NULL
-#> 15 /4dnc/example4d.nc 15443379  803851       NULL
-#> 16 /4dnc/example4d.nc 16247230 1348401       NULL
-#> 17 /4dnc/example4d.nc 17595631 1240646       NULL
-#> 18 /4dnc/example4d.nc 18836277 1286090       NULL
-#> 19 /4dnc/example4d.nc 20122367  580396       NULL
-#> 20 /4dnc/example4d.nc 20702763 1005448       NULL
+#>  1 /4dnc/example4d.nc    55531 1934051       NULL
+#>  2 /4dnc/example4d.nc  1989582 2107082       NULL
+#>  3 /4dnc/example4d.nc  7435080 1068653       NULL
+#>  4 /4dnc/example4d.nc  8503733 1793109       NULL
+#>  5 /4dnc/example4d.nc  4096664 1640701       NULL
+#>  6 /4dnc/example4d.nc  5737365 1697715       NULL
+#>  7 /4dnc/example4d.nc 10296842  765912       NULL
+#>  8 /4dnc/example4d.nc 11062754 1330360       NULL
+#>  9 /4dnc/example4d.nc 12393114 1458242       NULL
+#> 10 /4dnc/example4d.nc 13851356 1592023       NULL
+#> 11 /4dnc/example4d.nc 15443379  803851       NULL
+#> 12 /4dnc/example4d.nc 16247230 1348401       NULL
+#> 13 /4dnc/example4d.nc 17595631 1240646       NULL
+#> 14 /4dnc/example4d.nc 18836277 1286090       NULL
+#> 15 /4dnc/example4d.nc 20122367  580396       NULL
+#> 16 /4dnc/example4d.nc 20702763 1005448       NULL
 ```
 
-I don’t understand why there are 16 indexes but 20 paths and offsets atm
-… the full encoding and metadata is in
+I strongly think the array key indexes should be in that table as well
+but hey, there’s a strong move to Icechunk instead of this (or kerchunk
+json).
+
+The full encoding and metadata is in
 
 ``` r
 ## we still get weird encoding from python->json so sub out inline NaN
