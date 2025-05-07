@@ -1,0 +1,73 @@
+---
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# zarrquet
+
+Example netcdf created with
+
+```R
+gdalmdimtranslate -co FORMAT=NC4 -co ARRAY:COMPRESS=DEFLATE /vsicurl/https://thredds.nci.org.au/thredds/fileServer/gb6/BRAN/BRAN2020/daily/ocean_salt_1993_01.nc -scaleaxes "Time(4),st_ocean(4),yt_ocean(4),xt_ocean(4)" example4d.nc
+```
+
+```{r}
+## ignore nv and st_edges_ocean
+ncmeta::nc_dims("example4d.nc")
+
+## as in python we have
+#ds.salt.data.shape
+#(7, 12, 375, 900)
+#ds.salt.data.chunks
+#(4, 6, 188, 450)
+
+```
+
+
+Virtualize in Python
+
+```python
+import virtualizarr
+ds = virtualizarr.open_virtual_mfdataset("example4d.nc")
+ds.attrs = {} ## bad encoding of attributes so we drop 
+ds.virtualize.to_kerchunk("example4d.parquet", format = "parquet")
+```
+
+Also see how the chunks are keyed by chunk-in-array index: 
+
+```
+ds.salt.data.manifest.keys()
+#dict_keys(['0.0.0.0', '0.0.0.1', '0.0.1.0', '0.0.1.1', '0.1.0.0', '0.1.0.1', '0.1.1.0', '0.1.1.1', '1.0.0.0', '1.0.0.1', '1.0.1.0', '1.0.1.1', '1.1.0.0', '1.1.0.1', '1.1.1.0', '1.1.1.1'])
+```
+
+
+Look at the virtual table (the default record size is 1e5 so I just isolate to the rows that are valid).  The 'path' is the literal file input in-situ (can be remapped with the API at creation time). 
+
+https://virtualizarr.readthedocs.io/en/latest/generated/virtualizarr.accessor.VirtualiZarrDatasetAccessor.rename_paths.html#virtualizarr.accessor.VirtualiZarrDatasetAccessor.rename_paths
+
+```{r}
+d <- arrow::open_dataset("example4d.parquet") |> dplyr::collect()
+d[!is.na(d$path), ]
+
+```
+
+
+I don't understand why there are 16 indexes but 20 paths and offsets atm ...  the full encoding and metadata is in
+
+```{r}
+## we still get weird encoding from python->json so sub out inline NaN
+str(jsonlite::fromJSON(gsub("NaN", "\"NaN\"", readr::read_file("example4d.parquet/.zmetadata"))))
+```
+
+
+
